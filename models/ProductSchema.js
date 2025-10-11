@@ -32,9 +32,10 @@ const ProductSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
     },
-    images: [
+     images: [
       {
-        type: String, // روابط صور المنتج
+        url: { type: String, required: true },
+        public_id: { type: String, required: true },
       },
     ],
     isFeatured: {
