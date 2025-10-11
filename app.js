@@ -3,12 +3,12 @@
 const express = require('express');
 const app = express();
 const path = require("path");
-
-const { streamAndUpload, deleteFile } = require("./config/cloudinary");
-
-const uploadRoute = require("./routes/uploadRoute");
-//يعمل علي ربط السيرفر مع الفروت اند
 const cors = require('cors');
+
+
+// const { streamAndUpload, deleteFile } = require("./config/cloudinary");
+
+//يعمل علي ربط السيرفر مع الفروت اند
 
 //يعمل علي قراءة المتغيرات من ملف .env
 const dotenv = require('dotenv').config();
@@ -26,10 +26,9 @@ app.use("/products", require("./routes/Product"));
 //استدعاء الراوت الخاص category
 app.use("/category", require("./routes/Category"));
 
-app.post("/upload", streamAndUpload);
-app.post("/delete", deleteFile);
+// app.post("/upload", streamAndUpload);
+// app.post("/delete", deleteFile);
 
-app.use("/upload", uploadRoute);
 
 
 app.use("/images", express.static(path.join(__dirname, "images")));
