@@ -4,21 +4,8 @@ const multer = require("multer");
 const path = require("path"); // ✅ هذا هو الصحيح
 const Product = require("../models/ProductSchema"); // استدعاء الموديل
 
-// إعداد التخزين للصور
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./images");
-  },
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueName + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({ storage: storage });
-
-// 📦 إنشاء منتج جديد مع رفع عدة صور
-router.post("/createProduct", upload.array("images", 5), async (req, res) => {
+// 📦 إنشاء منتج جديد (بعد رفع الصور إلى Cloudinary من الـ Frontend)
+router.post("/createProduct", async (req, res) => {
   try {
     const {
       title,
@@ -30,24 +17,20 @@ router.post("/createProduct", upload.array("images", 5), async (req, res) => {
       isFeatured,
       rating,
       numReviews,
+      images, // روابط الصور من Cloudinary
     } = req.body;
 
-    // التحقق من البيانات المطلوبة
+    // ✅ التحقق من البيانات المطلوبة
     if (!title || !desc || !price || !category || !brand) {
       return res
         .status(400)
         .json({ msg: "Please provide all required fields" });
     }
 
-    // حفظ مسارات الصور (لو في صور)
-    const imagePaths = req.files
-      ? req.files.map(
-          (file) =>
-            `${req.protocol}://${req.get("host")}/images/${file.filename}`
-        )
-      : [];
+    // ✅ تأكيد أن الصور وصلت كـ array
+    const imageUrls = Array.isArray(images) ? images : [];
 
-    // إنشاء المنتج الجديد
+    // ✅ إنشاء المنتج الجديد
     const newProduct = new Product({
       title,
       desc,
@@ -58,17 +41,17 @@ router.post("/createProduct", upload.array("images", 5), async (req, res) => {
       isFeatured: isFeatured || false,
       rating: rating || 0,
       numReviews: numReviews || 0,
-      images: imagePaths,
+      images: imageUrls, // هنا بنخزن روابط Cloudinary
     });
 
     await newProduct.save();
 
     res
       .status(201)
-      .json({ msg: "Product created successfully", product: newProduct });
+      .json({ msg: "✅ Product created successfully", product: newProduct });
   } catch (error) {
-    console.error("Error creating product:", error.message);
-    res.status(500).json({ msg: "Server error" });
+    console.error("❌ Error creating product:", error.message);
+    res.status(500).json({ msg: "Server error", error: error.message });
   }
 });
 
