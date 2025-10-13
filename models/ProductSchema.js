@@ -34,12 +34,11 @@ const ProductSchema = new mongoose.Schema(
     },
     images: [
       {
-        type: Object,
-        default:{
-          publicId: null
-        }
+        url: { type: String, required: true },
+        publicId: { type: String, required: true },
       },
     ],
+
     isFeatured: {
       type: Boolean,
       default: false,
