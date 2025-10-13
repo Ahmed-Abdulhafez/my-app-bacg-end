@@ -1,24 +1,30 @@
+require("dotenv").config();
 const express = require("express");
 const router = express.Router();
+const Product = require("../models/ProductSchema");
+const { v2: cloudinary } = require("cloudinary");
 const multer = require("multer");
-const path = require("path"); // ✅ هذا هو الصحيح
-const Product = require("../models/ProductSchema"); // استدعاء الموديل
+const streamifier = require("streamifier");
 
-// إعداد التخزين للصور
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./images");
-  },
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueName + path.extname(file.originalname));
-  },
+// ✅ إعداد Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const upload = multer({ storage: storage });
+console.log("🔍 Cloudinary Config:", {
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY ? "✅ Loaded" : "❌ Missing",
+  api_secret: process.env.CLOUDINARY_API_SECRET ? "✅ Loaded" : "❌ Missing",
+});
 
-// 📦 إنشاء منتج جديد مع رفع عدة صور
-router.post("/createProduct", upload.array("images", 5), async (req, res) => {
+// ✅ إعداد multer لحفظ الصور مؤقتًا
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// 📦 إنشاء منتج جديد مع رفع الصور إلى Cloudinary
+router.post("/createProduct", upload.array("images", 10), async (req, res) => {
   try {
     const {
       title,
@@ -32,22 +38,35 @@ router.post("/createProduct", upload.array("images", 5), async (req, res) => {
       numReviews,
     } = req.body;
 
-    // التحقق من البيانات المطلوبة
     if (!title || !desc || !price || !category || !brand) {
       return res
         .status(400)
         .json({ msg: "Please provide all required fields" });
     }
 
-    // حفظ مسارات الصور (لو في صور)
-    const imagePaths = req.files
-      ? req.files.map(
-          (file) =>
-            `${req.protocol}://${req.get("host")}/images/${file.filename}`
-        )
-      : [];
+    const uploadedImages = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const result = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "uploaded_products",
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          streamifier.createReadStream(file.buffer).pipe(uploadStream);
+        });
 
-    // إنشاء المنتج الجديد
+        uploadedImages.push({
+          url: result.secure_url,
+          publicId: result.public_id,
+        });
+      }
+    }
+
     const newProduct = new Product({
       title,
       desc,
@@ -58,21 +77,22 @@ router.post("/createProduct", upload.array("images", 5), async (req, res) => {
       isFeatured: isFeatured || false,
       rating: rating || 0,
       numReviews: numReviews || 0,
-      images: imagePaths,
+      images: uploadedImages,
     });
 
     await newProduct.save();
 
-    res
-      .status(201)
-      .json({ msg: "Product created successfully", product: newProduct });
+    res.status(201).json({
+      msg: "✅ Product created successfully",
+      product: newProduct,
+    });
   } catch (error) {
-    console.error("Error creating product:", error.message);
-    res.status(500).json({ msg: "Server error" });
+    console.error("❌ Error creating product:", error);
+    res.status(500).json({ msg: "Server error", error: error.message });
   }
 });
 
-// جلب جميع المنتجات
+// 📜 جلب جميع المنتجات
 router.get("/getProduct", async (req, res) => {
   try {
     const products = await Product.find().populate("category", "name");
@@ -82,49 +102,78 @@ router.get("/getProduct", async (req, res) => {
   }
 });
 
-// جلب منتج معين عن طريق الاي دي
+// 🧩 جلب منتج واحد
 router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate(
       "category",
       "name"
     );
-    if (!product) {
-      return res.status(404).json({ msg: "Product Not Found" });
-    }
-    return res.json(product);
+    if (!product) return res.status(404).json({ msg: "Product not found" });
+    res.json(product);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// تعديل منتج
-router.put("/updateProduct/:id", async (req, res) => {
+// ✅ تعديل المنتج
+router.put("/:id", upload.array("images", 10), async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    }).populate("category", "name");
+    const { title, desc, price, brand, category, isFeatured } = req.body;
 
-    if (!product) {
-      return res.status(404).json({ msg: "Product Not Found" });
+    // ✅ تجهيز الصور الجديدة (لو موجودة)
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      imageUrls = req.files.map((file) => {
+        return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+      });
     }
 
-    res.json({ msg: "Product Updated Successfully", product });
+    // ✅ بناء البيانات المعدلة
+    const updateData = {
+      title,
+      desc,
+      price,
+      brand,
+      category,
+      isFeatured,
+    };
+
+    // ✅ إضافة الصور فقط لو فيه صور جديدة
+    if (imageUrls.length > 0) {
+      updateData.images = imageUrls;
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ msg: "❌ المنتج غير موجود" });
+    }
+
+    res.json({ msg: "✅ تم تعديل المنتج بنجاح", product: updatedProduct });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("❌ خطأ أثناء تعديل المنتج:", error.message);
+    res.status(500).json({ msg: "حدث خطأ في السيرفر", error: error.message });
   }
 });
 
 // حذف منتج
-router.delete("/deleteProduct/:id", async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
+
     if (!product) {
-      return res.status(404).json({ msg: "Product Not Found" });
+      return res.status(404).json({ msg: "❌ Product not found" });
     }
-    res.json({ msg: "Product deleted Successfully" });
+
+    res.json({ msg: "✅ Product deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("❌ Error deleting product:", error);
+    res.status(500).json({ msg: "Server error", error: error.message });
   }
 });
 

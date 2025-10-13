@@ -34,7 +34,10 @@ const ProductSchema = new mongoose.Schema(
     },
     images: [
       {
-        type: String, // روابط صور المنتج
+        type: Object,
+        default:{
+          publicId: null
+        }
       },
     ],
     isFeatured: {

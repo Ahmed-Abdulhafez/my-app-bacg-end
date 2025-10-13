@@ -1,46 +1,25 @@
-//استدعاء المكتبات
-//يعمل علي انشاء سيرفر
-const express = require('express');
+const express = require("express");
 const app = express();
+const cors = require("cors");
+const dotenv = require("dotenv").config();
+const connectDB = require("./config/db");
 const path = require("path");
-const cors = require('cors');
 
+app.use(cors({
+  origin: ["http://localhost:5173", "https://your-frontend-domain.vercel.app"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
-// const { streamAndUpload, deleteFile } = require("./config/cloudinary");
-
-//يعمل علي ربط السيرفر مع الفروت اند
-
-//يعمل علي قراءة المتغيرات من ملف .env
-const dotenv = require('dotenv').config();
-app.use(cors());
-
-// للتعرف علي ال req and res
 app.use(express.json());
-
-//استدعاء الراوت الخاص بالمستخدمين
-app.use("/users", require("./routes/Users"));
-
-//استدعاء الراوت الخاص بالمنتجات
-app.use("/products", require("./routes/Product"));
-
-//استدعاء الراوت الخاص category
-app.use("/category", require("./routes/Category"));
-
-// app.post("/upload", streamAndUpload);
-// app.post("/delete", deleteFile);
-
-
-
-app.use("/images", express.static(path.join(__dirname, "images")));
-//يعمل علي الاتصال بقاعدة البيانات
-const connectDB = require('./config/db');
 connectDB();
 
-module.exports = app;
+// ✅ المسارات
+app.use("/products", require("./routes/Product"));
+app.use("/category", require("./routes/Category"));
+app.use("/users", require("./routes/Users"));
 
-// const PORT = process.env.PORT || 5000;
+app.use("/images", express.static(path.join(__dirname, "images")));
 
-// app.listen(PORT, () => {
-//   console.log(`Server running on port ${PORT}`);
-// });
-
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
