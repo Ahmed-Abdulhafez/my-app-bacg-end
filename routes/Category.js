@@ -30,23 +30,15 @@ router.post("/createCategory", async (req, res) => {
 });
 
 // جلب جميع الفئات
-// router.get("/getCategory", async (req, res) => {
-//   try {
-//     const categories = await Category.find();
-//     res.json(categories);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-router.get("/:id", async (req, res) => {
+router.get("/getCategory", async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id);
-    if (!category) return res.status(404).json({ msg: "Category Not Found" });
-    res.json(category);
+    const categories = await Category.find();
+    res.json(categories);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 
 // جلب منتج معين عن طريق الاي دي
