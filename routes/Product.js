@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-// const router = express.Router();
+const router = express.Router();
 const Product = require("../models/ProductSchema");
 const { v2: cloudinary } = require("cloudinary");
 const multer = require("multer");
@@ -24,55 +24,75 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // 📦 إنشاء منتج جديد مع رفع الصور إلى Cloudinary
-module.exports = (io) => {
-  const router = express.Router();
+router.post("/createProduct", upload.array("images", 10), async (req, res) => {
+  try {
+    const {
+      title,
+      desc,
+      price,
+      category,
+      brand,
+      stock,
+      isFeatured,
+      rating,
+      numReviews,
+    } = req.body;
 
-  router.post("/createProduct", upload.array("images", 10), async (req, res) => {
-    try {
-      const { title, desc, price, category, brand, stock, isFeatured, rating, numReviews } = req.body;
-
-      if (!title || !desc || !price || !category || !brand) {
-        return res.status(400).json({ msg: "Please provide all required fields" });
-      }
-
-      const uploadedImages = [];
-      if (req.files && req.files.length > 0) {
-        for (const file of req.files) {
-          const result = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-              { folder: "uploaded_products" },
-              (error, result) => (error ? reject(error) : resolve(result))
-            );
-            streamifier.createReadStream(file.buffer).pipe(uploadStream);
-          });
-
-          uploadedImages.push({ url: result.secure_url, publicId: result.public_id });
-        }
-      }
-
-      const newProduct = new Product({
-        title,
-        desc,
-        price,
-        category,
-        brand,
-        stock: stock || 0,
-        isFeatured: isFeatured || false,
-        rating: rating || 0,
-        numReviews: numReviews || 0,
-        images: uploadedImages,
-      });
-
-      await newProduct.save();
-
-      io.emit("productsUpdated", newProduct); // ✅ هيشتغل الآن
-
-      res.status(201).json({ msg: "✅ Product created successfully", product: newProduct });
-    } catch (error) {
-      console.error("❌ Error creating product:", error);
-      res.status(500).json({ msg: "Server error", error: error.message });
+    if (!title || !desc || !price || !category || !brand) {
+      return res
+        .status(400)
+        .json({ msg: "Please provide all required fields" });
     }
-  });
+
+    const uploadedImages = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const result = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "uploaded_products",
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          streamifier.createReadStream(file.buffer).pipe(uploadStream);
+        });
+
+        uploadedImages.push({
+          url: result.secure_url,
+          publicId: result.public_id,
+        });
+      }
+    }
+
+    const newProduct = new Product({
+      title,
+      desc,
+      price,
+      category,
+      brand,
+      stock: stock || 0,
+      isFeatured: isFeatured || false,
+      rating: rating || 0,
+      numReviews: numReviews || 0,
+      images: uploadedImages,
+    });
+
+    await newProduct.save();
+
+    // 🚀 إرسال التحديث الفوري لكل العملاء المتصلين
+    io.emit("productsUpdated", newProduct);
+    res.status(201).json({
+      msg: "✅ Product created successfully",
+      product: newProduct,
+    });
+  } catch (error) {
+    console.error("❌ Error creating product:", error);
+    res.status(500).json({ msg: "Server error", error: error.message });
+  }
+});
 
 // 📜 جلب جميع المنتجات
 router.get("/getProduct", async (req, res) => {
@@ -159,9 +179,4 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-  return router;
-};
-
-
-
-// module.exports = router;
+module.exports = router;
