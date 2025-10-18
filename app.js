@@ -6,10 +6,16 @@ const connectDB = require("./config/db");
 const path = require("path");
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174", "https://my-app-e-commerce.vercel.app"],
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://my-app-e-commerce.vercel.app",
+    "https://front-end-cyan-five.vercel.app" // 👈 أضف هذا
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
 
 app.use(express.json());
 connectDB();
