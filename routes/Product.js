@@ -83,7 +83,7 @@ router.post("/createProduct", upload.array("images", 10), async (req, res) => {
     await newProduct.save();
 
     // 🚀 إرسال التحديث الفوري لكل العملاء المتصلين
-    io.emit("productsUpdated", newProduct);
+    // io.emit("productsUpdated", newProduct);
     res.status(201).json({
       msg: "✅ Product created successfully",
       product: newProduct,
