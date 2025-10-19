@@ -192,7 +192,7 @@ router.delete("/:id", async (req, res) => {
     // تحقق إن كان للمنتج صور بها public_id
     if (product.images && product.images.length > 0) {
       // استخراج public_ids
-      const publicIds = product.images.map(img => img.public_id);
+      const publicIds = product.images.map(img => img.publicId);
 
       // حذف الصور من Cloudinary
       const deletePromises = publicIds.map(id => cloudinary.uploader.destroy(id));
