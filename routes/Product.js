@@ -5,6 +5,7 @@ const Product = require("../models/ProductSchema");
 const { v2: cloudinary } = require("cloudinary");
 const multer = require("multer");
 const streamifier = require("streamifier");
+// const deleteFile = require("../config/cloudinary/deleteFile")
 
 // ✅ إعداد Cloudinary
 cloudinary.config({
@@ -164,19 +165,50 @@ router.put("/:id", upload.array("images", 10), async (req, res) => {
 });
 
 // حذف منتج
+// router.delete("/:id",deleteFile, async (req, res) => {
+//   try {
+//     const product = await Product.findByIdAndDelete(req.params.id);
+
+//     if (!product) {
+//       return res.status(404).json({ msg: "❌ Product not found" });
+//     }
+
+//     res.json({ msg: "✅ Product deleted successfully" });
+//   } catch (error) {
+//     console.error("❌ Error deleting product:", error);
+//     res.status(500).json({ msg: "Server error", error: error.message });
+//   }
+// });
+
+// حذف منتج مع الصور من Cloudinary
 router.delete("/:id", async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).json({ msg: "❌ Product not found" });
     }
 
-    res.json({ msg: "✅ Product deleted successfully" });
+    // تحقق إن كان للمنتج صور بها public_id
+    if (product.images && product.images.length > 0) {
+      // استخراج public_ids
+      const publicIds = product.images.map(img => img.public_id);
+
+      // حذف الصور من Cloudinary
+      const deletePromises = publicIds.map(id => cloudinary.uploader.destroy(id));
+      await Promise.all(deletePromises);
+      console.log("🗑️ Product images deleted from Cloudinary");
+    }
+
+    // حذف المنتج من قاعدة البيانات
+    await Product.findByIdAndDelete(req.params.id);
+
+    res.json({ msg: "✅ Product and images deleted successfully" });
   } catch (error) {
     console.error("❌ Error deleting product:", error);
     res.status(500).json({ msg: "Server error", error: error.message });
   }
 });
+
 
 module.exports = router;
