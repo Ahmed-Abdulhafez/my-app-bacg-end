@@ -180,7 +180,7 @@ router.put("/:id", upload.array("images", 10), async (req, res) => {
 //   }
 // });
 
-// حذف منتج مع الصور من Cloudinary
+// ✅ حذف المنتج مع صوره
 router.delete("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -189,19 +189,22 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ msg: "❌ Product not found" });
     }
 
-    // تحقق إن كان للمنتج صور بها public_id
+    // تحقق إن كان للمنتج صور بها publicId
     if (product.images && product.images.length > 0) {
-      // استخراج public_ids
-      const publicIds = product.images.map(img => img.publicId);
+      const publicIds = product.images.map(img => img.publicId).filter(Boolean); // تجاهل القيم الفارغة
 
-      // حذف الصور من Cloudinary
-      const deletePromises = publicIds.map(id => cloudinary.uploader.destroy(id));
-      await Promise.all(deletePromises);
-      console.log("🗑️ Product images deleted from Cloudinary");
+      if (publicIds.length > 0) {
+        const deletePromises = publicIds.map(id => cloudinary.uploader.destroy(id));
+        await Promise.all(deletePromises);
+        console.log("🗑️ Product images deleted from Cloudinary");
+      }
+    } else {
+      console.log("ℹ️ المنتج لا يحتوي على صور لحذفها.");
     }
 
     // حذف المنتج من قاعدة البيانات
     await Product.findByIdAndDelete(req.params.id);
+    console.log("✅ Product deleted from database.");
 
     res.json({ msg: "✅ Product and images deleted successfully" });
   } catch (error) {
