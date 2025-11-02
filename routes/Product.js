@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/ProductSchema");
+const {auth} = require("../auth/middelware");
+
 const { v2: cloudinary } = require("cloudinary");
 const multer = require("multer");
 const streamifier = require("streamifier");
@@ -25,7 +27,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // 📦 إنشاء منتج جديد مع رفع الصور إلى Cloudinary
-router.post("/createProduct", upload.array("images", 10), async (req, res) => {
+router.post("/createProduct",auth("admin"), upload.array("images", 10), async (req, res) => {
   try {
     const {
       title,
