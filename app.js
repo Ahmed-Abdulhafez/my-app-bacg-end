@@ -13,7 +13,7 @@ app.use(cors({
     "http://localhost:5173",
     "http://localhost:5174",
     "https://my-app-e-commerce.vercel.app",
-    "https://front-end-cyan-five.vercel.app" // 👈 أضف هذا
+    "https://e-commerce-lyart-kappa-73.vercel.app" // 👈 أضف هذا
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -32,6 +32,6 @@ app.use("/admin", require("./routes/admin"));
 app.use("/cart", require("./routes/cart"));
 app.use("/images", express.static(path.join(__dirname, "images")));
 
-const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 module.exports = app;
