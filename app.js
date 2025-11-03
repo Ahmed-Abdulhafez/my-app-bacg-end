@@ -8,18 +8,23 @@ const cookieParser = require("cookie-parser");
 const cartRoutes = require("./routes/cart");
 
 
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "https://e-commerce-lyart-kappa-73.vercel.app",
-    "https://my-app-e-commerce.vercel.app",
-    "https://front-end-cyan-five.vercel.app" // 👈 أضف هذا
-  ],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://e-commerce-lyart-kappa-73.vercel.app",
+      "https://my-app-e-commerce.vercel.app",
+      "https://front-end-cyan-five.vercel.app",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // ✅ مهم جدًا
+    allowedHeaders: ["Content-Type", "Authorization"], // ✅ السماح للهيدر الخاص بالتوكن
+    credentials: true, // ✅ لتفعيل الكوكيز / JWT
+  })
+);
+// ✅ حل إضافي لمشاكل preflight (خاصة على Vercel)
+app.options("*", cors());
+
 app.use(cookieParser());
 
 app.use(express.json());
