@@ -7,7 +7,6 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const cartRoutes = require("./routes/cart");
 
-
 app.use(cookieParser());
 
 app.use(cors({
@@ -15,9 +14,9 @@ app.use(cors({
     "http://localhost:5173",
     "http://localhost:5174",
     "https://my-app-e-commerce.vercel.app",
-    "https://front-end-cyan-five.vercel.app",
+    "https://front-end-cyan-five.vercel.app" // 👈 أضف هذا
   ],
-  credentials: true, // مهم جدًا علشان الكوكيز
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
@@ -32,15 +31,6 @@ app.use("/users", require("./routes/Users"));
 app.use("/admin", require("./routes/admin"));
 app.use("/cart", require("./routes/cart"));
 app.use("/images", express.static(path.join(__dirname, "images")));
-
-
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin);
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-});
 
 // const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
