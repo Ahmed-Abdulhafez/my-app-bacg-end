@@ -12,6 +12,7 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "http://localhost:5174",
+    "https://e-commerce-lyart-kappa-73.vercel.app",
     "https://my-app-e-commerce.vercel.app",
     "https://front-end-cyan-five.vercel.app" // 👈 أضف هذا
   ],
