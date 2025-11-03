@@ -7,7 +7,6 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const cartRoutes = require("./routes/cart");
 
-app.use(cookieParser());
 
 app.use(cors({
   origin: [
@@ -20,6 +19,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+app.use(cookieParser());
 
 app.use(express.json());
 connectDB();
@@ -32,6 +32,6 @@ app.use("/admin", require("./routes/admin"));
 app.use("/cart", require("./routes/cart"));
 app.use("/images", express.static(path.join(__dirname, "images")));
 
-// const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 module.exports = app;
