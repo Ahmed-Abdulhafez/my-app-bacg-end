@@ -8,22 +8,37 @@ const cookieParser = require("cookie-parser");
 const cartRoutes = require("./routes/cart");
 
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://e-commerce-lyart-kappa-73.vercel.app",
+  "https://my-app-e-commerce.vercel.app",
+  "https://front-end-cyan-five.vercel.app",
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://e-commerce-lyart-kappa-73.vercel.app",
-      "https://my-app-e-commerce.vercel.app",
-      "https://front-end-cyan-five.vercel.app",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // ✅ مهم جدًا
-    allowedHeaders: ["Content-Type", "Authorization"], // ✅ السماح للهيدر الخاص بالتوكن
-    credentials: true, // ✅ لتفعيل الكوكيز / JWT
+    origin: function (origin, callback) {
+      // السماح للطلبات الداخلية أو من origins محددة
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-// ✅ حل إضافي لمشاكل preflight (خاصة على Vercel)
-app.options("*", cors());
+
+// ✅ لازم تضيف ده بعد الـ cors مش قبل
+app.options("*", (req, res) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin);
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.sendStatus(200);
+});
 
 app.use(cookieParser());
 
