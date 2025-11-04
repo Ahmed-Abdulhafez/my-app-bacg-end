@@ -77,13 +77,13 @@ router.post("/login", async (req, res) => {
     );
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // تأمين الكوكيز في بيئة الإنتاج
-      sameSite: "lax", // منع CSRF
-      maxAge: 7 * 24 * 60 * 60 * 1000, // مدة صلاحية الكوكيز (1 أسبوع)
+      secure: true, // ضروري لأي موقع على HTTPS (مثل Vercel)
+      sameSite: "none", // ضروري حتى يتم تبادل الكوكي بين النطاقين
+      maxAge: 7 * 24 * 60 * 60 * 1000, // أسبوع
     });
 
     const redirectPath = role === "admin" ? "/Dashboard" : "/";
-    
+
     return res.status(201).json({
       msg: "User login Successfully",
       user,
@@ -97,24 +97,24 @@ router.post("/login", async (req, res) => {
 });
 
 // التحقق من التوكن و جلب بيانات المستخدم
-router.get("/verify", cookieAuth, async(req , res ) =>{
+router.get("/verify", cookieAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password")
-    if(!user) {
-      return res.status(401).json({msg: "User not found"})
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(401).json({ msg: "User not found" });
     }
     res.status(201).json({
       user: {
         id: user._id,
         email: user.email,
         name: user.name,
-        role: user.role
-      }
-    })
+        role: user.role,
+      },
+    });
   } catch (error) {
-    res.status(401).json({msg: "Invalid Token"})
+    res.status(401).json({ msg: "Invalid Token" });
   }
-})
+});
 
 // تسجيل خروج المستخدم
 router.post("/logout", (req, res) => {
@@ -124,7 +124,7 @@ router.post("/logout", (req, res) => {
     sameSite: "lax",
   });
   res.status(200).json({ msg: "Logged out successfully" });
-})
+});
 
 // جلب المستخدم من خلال الاي دي
 router.get("/:id", async (req, res) => {

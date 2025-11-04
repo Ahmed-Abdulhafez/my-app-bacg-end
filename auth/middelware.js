@@ -36,20 +36,21 @@ const auth = (requiredRole = null) => {
 
 const cookieAuth = (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies?.token;
 
     if (!token) {
-      return res.status(401).json({ msg: "Access denied. No token provided." });
+      console.log("⚠️ No token found in cookies");
+      return res.status(401).json({ msg: "No token provided" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
-
     next();
   } catch (error) {
-    console.error("❌ cookieAuth error:", error);
-    return res.status(401).json({ msg: "Invalid or expired token." });
+    console.error("❌ cookieAuth error:", error.message);
+    return res.status(401).json({ msg: "Invalid or expired token" });
   }
 };
+
 
 module.exports = {auth , cookieAuth};
