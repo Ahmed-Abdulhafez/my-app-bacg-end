@@ -120,10 +120,10 @@ router.get("/verify", cookieAuth, async (req, res) => {
 router.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: true,          // ضروري جداً مع HTTPS (Vercel بيستخدم HTTPS)
+    sameSite: "none",      // مهم جداً علشان الكوكي يتمسح عبر دومينات مختلفة
   });
-  res.status(200).json({ msg: "Logged out successfully" });
+  return res.status(200).json({ msg: "✅ Logged out successfully" });
 });
 
 // جلب المستخدم من خلال الاي دي
